@@ -13,8 +13,6 @@ using Sentry;
 using Sentry.Protocol;
 using System.IO;
 using System.Text;
-using Windows.ApplicationModel;
-using Windows.Storage;
 using Windows.System;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
@@ -25,7 +23,7 @@ namespace Files.App.Helpers
 	/// </summary>
 	public static class AppLifecycleHelper
 	{
-		private readonly static string AppInformationKey = @$"Software\Files Community\{Package.Current.Id.Name}\v1\AppInformation";
+		private readonly static string AppInformationKey = @$"Software\Files Community\{AppPlatformHelper.AppName}\v1\AppInformation";
 
 		/// <summary>
 		/// Gets the value that indicates whether the app is updated.
@@ -79,14 +77,13 @@ namespace Files.App.Helpers
 		/// <summary>
 		/// Gets application package version.
 		/// </summary>
-		public static Version AppVersion { get; } =
-			new(Package.Current.Id.Version.Major, Package.Current.Id.Version.Minor, Package.Current.Id.Version.Build, Package.Current.Id.Version.Revision);
+		public static Version AppVersion { get; } = AppPlatformHelper.AppVersion;
 
 		/// <summary>
 		/// Gets application icon path.
 		/// </summary>
 		public static string AppIconPath { get; } =
-			SystemIO.Path.Combine(Package.Current.InstalledLocation.Path, AppEnvironment switch
+			SystemIO.Path.Combine(AppPlatformHelper.InstalledPath, AppEnvironment switch
 			{
 				AppEnvironment.Dev => Constants.AssetPaths.DevLogo,
 				AppEnvironment.SideloadPreview or AppEnvironment.StorePreview => Constants.AssetPaths.PreviewLogo,
@@ -183,7 +180,7 @@ namespace Files.App.Helpers
 			{
 				options.Dsn = Constants.AutomatedWorkflowInjectionKeys.SentrySecret;
 				options.AutoSessionTracking = true;
-				var packageVersion = Package.Current.Id.Version;
+				var packageVersion = AppPlatformHelper.AppVersion;
 				options.Release = $"{packageVersion.Major}.{packageVersion.Minor}.{packageVersion.Build}";
 				options.TracesSampleRate = 0.10;
 				options.ProfilesSampleRate = 0.05;
@@ -199,13 +196,13 @@ namespace Files.App.Helpers
 		public static IHost ConfigureHost()
 		{
 			var builder = Host.CreateDefaultBuilder()
-				.UseContentRoot(Package.Current.InstalledLocation.Path)
+				.UseContentRoot(AppPlatformHelper.InstalledPath)
 				.UseEnvironment(AppLifecycleHelper.AppEnvironment.ToString())
 				.ConfigureLogging(builder => builder
 					.ClearProviders()
 					.AddConsole()
 					.AddDebug()
-					.AddProvider(new FileLoggerProvider(Path.Combine(ApplicationData.Current.LocalFolder.Path, "debug.log")))
+					.AddProvider(new FileLoggerProvider(Path.Combine(AppPlatformHelper.LocalFolderPath, "debug.log")))
 					.AddProvider(new SentryLoggerProvider())
 					.SetMinimumLevel(LogLevel.Information))
 				.ConfigureServices(services => services

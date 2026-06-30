@@ -24,11 +24,12 @@ namespace Files.App.Utils.Cloud
 			// "sync_folder", which has the local folder to sync.
 
 			string appDataPath = UserDataPaths.GetDefault().LocalAppData;
+			var tempFolder = await StorageFolder.GetFolderFromPathAsync(AppPlatformHelper.TempFolderPath);
 
 			var configFile = await StorageFile.GetFileFromPathAsync(Path.Combine(appDataPath, @"SynologyDrive\data\db\sys.sqlite"));
-			await configFile.CopyAsync(ApplicationData.Current.TemporaryFolder, "synology_drive.db", NameCollisionOption.ReplaceExisting);
+			await configFile.CopyAsync(tempFolder, "synology_drive.db", NameCollisionOption.ReplaceExisting);
 
-			var syncDbPath = Path.Combine(ApplicationData.Current.TemporaryFolder.Path, "synology_drive.db");
+			var syncDbPath = Path.Combine(AppPlatformHelper.TempFolderPath, "synology_drive.db");
 
 			// Build the connection and SQL command
 			SQLitePCL.Batteries_V2.Init();

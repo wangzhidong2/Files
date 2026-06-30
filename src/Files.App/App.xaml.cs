@@ -8,9 +8,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Windows.AppLifecycle;
 using Windows.Win32;
-using Windows.ApplicationModel;
 using Windows.ApplicationModel.DataTransfer;
-using Windows.Storage;
 
 namespace Files.App
 {
@@ -185,7 +183,7 @@ namespace Files.App
 				args.WindowActivationState != WindowActivationState.PointerActivated)
 				return;
 
-			ApplicationData.Current.LocalSettings.Values["INSTANCE_ACTIVE"] = -Environment.ProcessId;
+			AppPlatformHelper.LocalSettings["INSTANCE_ACTIVE"] = -Environment.ProcessId;
 		}
 
 		/// <summary>
@@ -298,7 +296,7 @@ namespace Files.App
 			SafetyExtensions.IgnoreExceptions(() =>
 			{
 				var dataPackage = Clipboard.GetContent();
-				if (dataPackage.Properties.PackageFamilyName == Package.Current.Id.FamilyName)
+				if (dataPackage.Properties.PackageFamilyName == AppPlatformHelper.AppFamilyName)
 				{
 					if (dataPackage.Contains(StandardDataFormats.StorageItems))
 						Clipboard.Flush();

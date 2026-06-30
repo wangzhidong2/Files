@@ -4,9 +4,8 @@
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Windows.Storage;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Gdi;
@@ -23,7 +22,7 @@ namespace Files.App.Data.Items
 		private readonly WNDPROC _oldWndProc;
 		private readonly WNDPROC _newWndProc;
 
-		private readonly ApplicationDataContainer _applicationDataContainer = ApplicationData.Current.LocalSettings;
+		private static readonly string _windowPlacementFilePath = System.IO.Path.Combine(AppPlatformHelper.LocalFolderPath, "window_placement.json");
 
 		/// <summary>
 		/// Gets hWnd of this <see cref="Window"/>.
@@ -130,12 +129,12 @@ namespace Files.App.Data.Items
 			sw.Write(placementData);
 			sw.Flush();
 
-			var values = GetDataStore(out _, true);
-
-			if (_applicationDataContainer.Containers.ContainsKey("WinUIEx"))
-				_applicationDataContainer.Values.Remove("WinUIEx");
-
-			values["MainWindowPlacementData"] = Convert.ToBase64String(data.ToArray());
+			SafetyExtensions.IgnoreExceptions(() =>
+			{
+				var store = LoadPlacementStore();
+				store["MainWindowPlacementData"] = Convert.ToBase64String(data.ToArray());
+				SavePlacementStore(store);
+			});
 		}
 
 		private void RestoreWindowPlacementData()
@@ -144,14 +143,13 @@ namespace Files.App.Data.Items
 			if (!GetType().Name.Equals(nameof(MainWindow), StringComparison.OrdinalIgnoreCase))
 				return;
 
-			var values = GetDataStore(out var oldDataExists, false);
-
 			byte[]? data = null;
-			if (values.TryGetValue(oldDataExists ? "WindowPersistance_FilesMainWindow" : "MainWindowPlacementData", out object? value))
+			SafetyExtensions.IgnoreExceptions(() =>
 			{
-				if (value is string base64)
+				var store = LoadPlacementStore();
+				if (store.TryGetValue("MainWindowPlacementData", out var base64))
 					data = Convert.FromBase64String(base64);
-			}
+			});
 
 			if (data is null)
 				return;
@@ -192,32 +190,39 @@ namespace Files.App.Data.Items
 				windowPlacementData.showCmd = SHOW_WINDOW_CMD.SW_NORMAL;
 
 			PInvoke.SetWindowPlacement(new(WindowHandle), in windowPlacementData);
-
-			return;
 		}
 
-		private IPropertySet GetDataStore(out bool oldDataExists, bool useNewStore = true)
+		private static Dictionary<string, string> LoadPlacementStore()
 		{
-			IPropertySet values;
-			oldDataExists = false;
-
-			if (_applicationDataContainer.Containers.TryGetValue("Files", out var dataContainer))
+			try
 			{
-				values = dataContainer.Values;
+				if (SystemIO.File.Exists(_windowPlacementFilePath))
+				{
+					var json = SystemIO.File.ReadAllText(_windowPlacementFilePath);
+					return JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? [];
+				}
 			}
-			else if (!useNewStore && _applicationDataContainer.Containers.TryGetValue("WinUIEx", out var oldDataContainer))
+			catch
 			{
-				values = oldDataContainer.Values;
-				oldDataExists = true;
-			}
-			else
-			{
-				values = _applicationDataContainer.CreateContainer(
-					"Files",
-					ApplicationDataCreateDisposition.Always).Values;
 			}
 
-			return values;
+			return [];
+		}
+
+		private static void SavePlacementStore(Dictionary<string, string> store)
+		{
+			try
+			{
+				var dir = SystemIO.Path.GetDirectoryName(_windowPlacementFilePath);
+				if (!string.IsNullOrEmpty(dir))
+					SystemIO.Directory.CreateDirectory(dir);
+
+				var json = JsonSerializer.Serialize(store);
+				SystemIO.File.WriteAllText(_windowPlacementFilePath, json);
+			}
+			catch
+			{
+			}
 		}
 
 		private unsafe List<Tuple<string, Rect>> GetAllMonitorInfo()

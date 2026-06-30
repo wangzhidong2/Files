@@ -4,7 +4,6 @@
 using Files.Shared.Helpers;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
-using Windows.Storage;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.System.WinRT;
@@ -15,7 +14,8 @@ class Program
 {
 	internal static readonly AsyncManualResetEvent ExitSignalEvent = new();
 	private static readonly CancellationTokenSource cancellationTokenSource = new();
-	private static readonly StreamWriter logWriter = new(Path.Combine(ApplicationData.Current.LocalFolder.Path, "debug_server.log"), append: true) { AutoFlush = true };
+	private static readonly string LocalAppDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Files");
+	private static readonly StreamWriter logWriter = new(Path.Combine(LocalAppDataPath, "debug_server.log"), append: true) { AutoFlush = true };
 
 	static async Task Main()
 	{

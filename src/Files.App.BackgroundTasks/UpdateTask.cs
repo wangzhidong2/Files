@@ -30,8 +30,9 @@ namespace Files.App.BackgroundTasks
 
 		private void DeleteLogFiles()
 		{
-			File.Delete(Path.Combine(ApplicationData.Current.LocalFolder.Path, "debug.log"));
-			File.Delete(Path.Combine(ApplicationData.Current.LocalFolder.Path, "debug_fulltrust.log"));
+			var localAppDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Files");
+			File.Delete(Path.Combine(localAppDataPath, "debug.log"));
+			File.Delete(Path.Combine(localAppDataPath, "debug_fulltrust.log"));
 		}
 
 		private async Task RefreshJumpListAsync()

@@ -10,7 +10,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Windows.Win32.UI.WindowsAndMessaging;
 using Windows.ApplicationModel.Activation;
-using Windows.Storage;
 
 namespace Files.App
 {
@@ -33,10 +32,10 @@ namespace Files.App
 		/// </summary>
 		public static string ConsumeLaunchCwd()
 		{
-			var values = ApplicationData.Current.LocalSettings.Values;
-			var cwd = values.TryGetValue(LaunchCwdKey, out var raw) ? raw as string : null;
+			var settings = AppPlatformHelper.LocalSettings;
+			var cwd = settings.TryGetValue(LaunchCwdKey, out var raw) ? raw as string : null;
 			if (cwd is not null)
-				values.Remove(LaunchCwdKey);
+				settings.Remove(LaunchCwdKey);
 			return string.IsNullOrEmpty(cwd) ? Environment.CurrentDirectory : cwd;
 		}
 
@@ -45,7 +44,7 @@ namespace Files.App
 			// Capture the source process's working directory before any potential
 			// activation redirect, so a receiving instance can resolve relative
 			// paths like "." against the terminal's CWD rather than its own. (#16982)
-			ApplicationData.Current.LocalSettings.Values[LaunchCwdKey] = Environment.CurrentDirectory;
+			AppPlatformHelper.LocalSettings[LaunchCwdKey] = Environment.CurrentDirectory;
 
 			var pool = new Semaphore(0, 1, $"Files-{AppLifecycleHelper.AppEnvironment}-Instance", out var isNew);
 
@@ -55,7 +54,7 @@ namespace Files.App
 				pool.Release();
 
 				// Redirect to the main process
-				var activePid = ApplicationData.Current.LocalSettings.Values.Get("INSTANCE_ACTIVE", -1);
+				var activePid = AppPlatformHelper.LocalSettings.Get("INSTANCE_ACTIVE", -1);
 				var instance = AppInstance.FindOrRegisterForKey(activePid.ToString());
 				RedirectActivationTo(instance, AppInstance.GetCurrent().GetActivatedEventArgs());
 
@@ -86,7 +85,7 @@ namespace Files.App
 				try
 				{
 					return p.MainModule?.FileName
-						.StartsWith(Windows.ApplicationModel.Package.Current.EffectivePath, StringComparison.OrdinalIgnoreCase) ?? false;
+						.StartsWith(AppPlatformHelper.EffectivePath, StringComparison.OrdinalIgnoreCase) ?? false;
 				}
 				catch
 				{
@@ -123,7 +122,7 @@ namespace Files.App
 			// Now we can do the first WinRT server call
 			//Server.AppInstanceMonitor.StartMonitor(Environment.ProcessId);
 
-			var OpenTabInExistingInstance = ApplicationData.Current.LocalSettings.Values.Get("OpenTabInExistingInstance", true);
+			var OpenTabInExistingInstance = AppPlatformHelper.LocalSettings.Get("OpenTabInExistingInstance", true);
 
 			AppActivationArguments activatedArgs;
 			try
@@ -171,7 +170,7 @@ namespace Files.App
 				if (parsedCommands is null || !parsedCommands.Any(x => x.Type == ParsedCommandType.OutputPath) &&
 					(OpenTabInExistingInstance || parsedCommands.Any(x => x.Type == ParsedCommandType.TagFiles)))
 				{
-					var activePid = ApplicationData.Current.LocalSettings.Values.Get("INSTANCE_ACTIVE", -1);
+					var activePid = AppPlatformHelper.LocalSettings.Get("INSTANCE_ACTIVE", -1);
 					var instance = AppInstance.FindOrRegisterForKey(activePid.ToString());
 
 					if (!instance.IsCurrent)
@@ -198,7 +197,7 @@ namespace Files.App
 			{
 				if (activatedArgs.Data is ILaunchActivatedEventArgs launchArgs)
 				{
-					var activePid = ApplicationData.Current.LocalSettings.Values.Get("INSTANCE_ACTIVE", -1);
+					var activePid = AppPlatformHelper.LocalSettings.Get("INSTANCE_ACTIVE", -1);
 					var instance = AppInstance.FindOrRegisterForKey(activePid.ToString());
 					if (!instance.IsCurrent && !string.IsNullOrWhiteSpace(launchArgs.Arguments))
 					{
@@ -211,7 +210,7 @@ namespace Files.App
 					var parsedArgs = protocolArgs.Uri.Query.TrimStart('?').Split('=');
 					if (parsedArgs.Length == 1)
 					{
-						var activePid = ApplicationData.Current.LocalSettings.Values.Get("INSTANCE_ACTIVE", -1);
+						var activePid = AppPlatformHelper.LocalSettings.Get("INSTANCE_ACTIVE", -1);
 						var instance = AppInstance.FindOrRegisterForKey(activePid.ToString());
 						if (!instance.IsCurrent)
 						{
@@ -222,7 +221,7 @@ namespace Files.App
 				}
 				else if (activatedArgs.Data is IFileActivatedEventArgs)
 				{
-					var activePid = ApplicationData.Current.LocalSettings.Values.Get("INSTANCE_ACTIVE", -1);
+					var activePid = AppPlatformHelper.LocalSettings.Get("INSTANCE_ACTIVE", -1);
 					var instance = AppInstance.FindOrRegisterForKey(activePid.ToString());
 					if (!instance.IsCurrent)
 					{
@@ -236,7 +235,7 @@ namespace Files.App
 			if (currentInstance.IsCurrent)
 				currentInstance.Activated += OnActivated;
 
-			ApplicationData.Current.LocalSettings.Values["INSTANCE_ACTIVE"] = -Environment.ProcessId;
+			AppPlatformHelper.LocalSettings["INSTANCE_ACTIVE"] = -Environment.ProcessId;
 
 			Application.Start((p) =>
 			{

@@ -26,10 +26,10 @@ namespace Files.App.ViewModels.Settings
 			=> string.Format($"{Strings.SettingsAboutVersionTitle.GetLocalizedResource()} {AppVersion.Major}.{AppVersion.Minor}.{AppVersion.Build}.{AppVersion.Revision}");
 
 		public string AppName
-			=> Package.Current.DisplayName;
+			=> AppPlatformHelper.AppDisplayName;
 
-		public PackageVersion AppVersion
-			=> Package.Current.Id.Version;
+		public Version AppVersion
+			=> AppPlatformHelper.AppVersion;
 
 		public ObservableCollection<OpenSourceLibraryItem> OpenSourceLibraries { get; }
 
@@ -99,7 +99,7 @@ namespace Files.App.ViewModels.Settings
 
 		private async Task<bool> OpenLogLocation()
 		{
-			await Launcher.LaunchFolderAsync(ApplicationData.Current.LocalFolder).AsTask();
+			await Launcher.LaunchFolderAsync(await StorageFolder.GetFolderFromPathAsync(AppPlatformHelper.LocalFolderPath)).AsTask();
 
 			// TODO: Move this to an application service
 			// Detect if Files is set as the default file manager

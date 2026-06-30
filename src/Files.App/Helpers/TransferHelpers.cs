@@ -51,7 +51,7 @@ namespace Files.App.Helpers
 				if (items.IsEmpty)
 					return;
 
-				dataPackage.Properties.PackageFamilyName = Windows.ApplicationModel.Package.Current.Id.FamilyName;
+				dataPackage.Properties.PackageFamilyName = AppPlatformHelper.AppFamilyName;
 				dataPackage.SetStorageItems(items, false);
 
 				Clipboard.SetContent(dataPackage);
@@ -140,7 +140,7 @@ namespace Files.App.Helpers
 				if (items.IsEmpty)
 					return;
 
-				dataPackage.Properties.PackageFamilyName = Windows.ApplicationModel.Package.Current.Id.FamilyName;
+				dataPackage.Properties.PackageFamilyName = AppPlatformHelper.AppFamilyName;
 				dataPackage.SetStorageItems(items, false);
 
 				Clipboard.SetContent(dataPackage);

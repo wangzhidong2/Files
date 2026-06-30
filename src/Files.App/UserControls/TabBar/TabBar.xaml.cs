@@ -208,7 +208,7 @@ namespace Files.App.UserControls.TabBar
 			}
 
 			var tabViewItemArgs = TabBarItemParameter.Deserialize(tabViewItemString);
-			ApplicationData.Current.LocalSettings.Values[TabDropHandledIdentifier] = true;
+			AppPlatformHelper.LocalSettings[TabDropHandledIdentifier] = true;
 			await NavigationHelpers.AddNewTabByParamAsync(tabViewItemArgs.InitialPageType, tabViewItemArgs.NavigationParameter, index);
 		}
 
@@ -219,13 +219,13 @@ namespace Files.App.UserControls.TabBar
 
 			TabDragCompleted?.Invoke(this, args.Item as TabBarItem);
 
-			if (ApplicationData.Current.LocalSettings.Values.ContainsKey(TabDropHandledIdentifier) &&
-				(bool)ApplicationData.Current.LocalSettings.Values[TabDropHandledIdentifier])
+			if (AppPlatformHelper.LocalSettings.ContainsKey(TabDropHandledIdentifier) &&
+				(bool)AppPlatformHelper.LocalSettings[TabDropHandledIdentifier])
 				CloseTab(args.Item as TabBarItem);
 			else
 				HorizontalTabView.SelectedItem = args.Tab;
 
-			ApplicationData.Current.LocalSettings.Values.Remove(TabDropHandledIdentifier);
+			AppPlatformHelper.LocalSettings.Remove(TabDropHandledIdentifier);
 		}
 
 		private async void TabView_TabDroppedOutside(TabView sender, TabViewTabDroppedOutsideEventArgs args)
