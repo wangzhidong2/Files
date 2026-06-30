@@ -55,7 +55,7 @@ jobs:
           -p:Configuration=$env:CONFIGURATION `
           -v:quiet
 
-    - name: Build Files (unpackaged Win32)
+    - name: Build & publish Files (unpackaged Win32)
       shell: pwsh
       run: |
         msbuild $env:APP_PROJECT_PATH `
@@ -63,18 +63,10 @@ jobs:
           -p:Configuration=$env:CONFIGURATION `
           -p:Platform=$env:PLATFORM `
           -p:WindowsPackageType=None `
+          -p:RuntimeIdentifier=win-$env:PLATFORM `
+          -p:SelfContained=false `
+          -p:PublishDir="$env:ARTIFACTS_DIR\Files\" `
           -v:minimal
-
-    - name: Publish Files (self-contained)
-      shell: pwsh
-      run: |
-        $outputDir = "$env:ARTIFACTS_DIR\Files"
-        dotnet publish $env:APP_PROJECT_PATH `
-          -c $env:CONFIGURATION `
-          -r win-$env:PLATFORM `
-          --self-contained false `
-          -o $outputDir `
-          -p:Platform=$env:PLATFORM
 
     - name: Upload exe artifacts
       uses: actions/upload-artifact@v7
