@@ -55,7 +55,7 @@ jobs:
           -p:Configuration=$env:CONFIGURATION `
           -v:quiet
 
-    - name: Build & publish Files (unpackaged Win32)
+    - name: Build Files (unpackaged Win32)
       shell: pwsh
       run: |
         msbuild $env:APP_PROJECT_PATH `
@@ -65,8 +65,17 @@ jobs:
           -p:WindowsPackageType=None `
           -p:RuntimeIdentifier=win-$env:PLATFORM `
           -p:SelfContained=false `
-          -p:PublishDir="$env:ARTIFACTS_DIR\Files\" `
           -v:minimal
+
+    - name: Copy build output to artifacts
+      shell: pwsh
+      run: |
+        $binDir = "$env:GITHUB_WORKSPACE\src\Files.App\bin\$env:PLATFORM\$env:CONFIGURATION\net10.0-windows10.0.26100.0\win-$env:PLATFORM"
+        Write-Host "Copying from: $binDir"
+        New-Item -ItemType Directory -Force -Path "$env:ARTIFACTS_DIR\Files"
+        Copy-Item -Path "$binDir\*" -Destination "$env:ARTIFACTS_DIR\Files\" -Recurse -Force
+        Write-Host "Files in artifacts:"
+        Get-ChildItem "$env:ARTIFACTS_DIR\Files" -Filter "*.exe" | ForEach-Object { Write-Host "  $($_.Name)" }
 
     - name: Upload exe artifacts
       uses: actions/upload-artifact@v7
