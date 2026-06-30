@@ -67,15 +67,22 @@ jobs:
           -p:SelfContained=false `
           -v:minimal
 
-    - name: Copy build output to artifacts
+    - name: Copy build output and installer scripts to artifacts
       shell: pwsh
       run: |
         $binDir = "$env:GITHUB_WORKSPACE\src\Files.App\bin\$env:PLATFORM\$env:CONFIGURATION\net10.0-windows10.0.26100.0\win-$env:PLATFORM"
         Write-Host "Copying from: $binDir"
         New-Item -ItemType Directory -Force -Path "$env:ARTIFACTS_DIR\Files"
         Copy-Item -Path "$binDir\*" -Destination "$env:ARTIFACTS_DIR\Files\" -Recurse -Force
+
+        # Copy installer scripts to artifacts root
+        Copy-Item -Path "$env:GITHUB_WORKSPACE\installer\install.ps1" -Destination "$env:ARTIFACTS_DIR\" -Force
+        Copy-Item -Path "$env:GITHUB_WORKSPACE\installer\uninstall.ps1" -Destination "$env:ARTIFACTS_DIR\" -Force
+
         Write-Host "Files in artifacts:"
         Get-ChildItem "$env:ARTIFACTS_DIR\Files" -Filter "*.exe" | ForEach-Object { Write-Host "  $($_.Name)" }
+        Write-Host "Installer scripts:"
+        Get-ChildItem "$env:ARTIFACTS_DIR" -Filter "*.ps1" | ForEach-Object { Write-Host "  $($_.Name)" }
 
     - name: Upload exe artifacts
       uses: actions/upload-artifact@v7
